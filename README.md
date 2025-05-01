@@ -45,7 +45,7 @@ Check out the video demo of the application in action:
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
+   git clone [<repository-url>](https://github.com/Akshat-Gupta04/Image-Caption-Story-Generator.git)
    cd image_caption_story
    ```
 
