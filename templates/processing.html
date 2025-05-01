@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing - Image Caption Story Generator</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon/favicon.svg') }}" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .processing-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .processing-icon {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+
+        .processing-spinner {
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 2rem;
+        }
+
+        .processing-message {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .processing-progress {
+            width: 300px;
+            height: 8px;
+            background-color: var(--darker-bg);
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .processing-progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .processing-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .processing-step i {
+            margin-right: 0.5rem;
+        }
+
+        .processing-step.active {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .processing-step.completed i {
+            color: var(--success);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Processing Your Images</h1>
+            <p class="lead">Please wait while we generate captions and create your story</p>
+        </div>
+
+        <div class="card">
+            <div class="processing-container">
+                <div class="processing-spinner"></div>
+                <div class="processing-message" id="processing-message">Initializing...</div>
+
+                <div class="processing-progress">
+                    <div class="processing-progress-bar" id="progress-bar"></div>
+                </div>
+
+                <div class="processing-steps">
+                    <div class="processing-step" id="step-upload">
+                        <i class="fas fa-upload"></i> Uploading images
+                    </div>
+                    <div class="processing-step" id="step-caption">
+                        <i class="fas fa-image"></i> Generating captions
+                    </div>
+                    <div class="processing-step" id="step-story">
+                        <i class="fas fa-book"></i> Creating story
+                    </div>
+                    <div class="processing-step" id="step-complete">
+                        <i class="fas fa-check-circle"></i> Completing process
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.getElementById('progress-bar');
+            const processingMessage = document.getElementById('processing-message');
+            const stepUpload = document.getElementById('step-upload');
+            const stepCaption = document.getElementById('step-caption');
+            const stepStory = document.getElementById('step-story');
+            const stepComplete = document.getElementById('step-complete');
+
+            // Function to update the UI based on status
+            function updateStatus(data) {
+                // Update progress bar
+                progressBar.style.width = `${data.progress}%`;
+
+                // Update message
+                processingMessage.textContent = data.message;
+
+                // Update steps
+                stepUpload.classList.remove('active', 'completed');
+                stepCaption.classList.remove('active', 'completed');
+                stepStory.classList.remove('active', 'completed');
+                stepComplete.classList.remove('active', 'completed');
+
+                if (data.status === 'uploading') {
+                    stepUpload.classList.add('active');
+                } else if (data.status === 'processing') {
+                    stepUpload.classList.add('completed');
+
+                    if (data.step === 'captioning') {
+                        stepCaption.classList.add('active');
+                    } else if (data.step === 'story') {
+                        stepCaption.classList.add('completed');
+                        stepStory.classList.add('active');
+                    }
+                } else if (data.status === 'complete') {
+                    stepUpload.classList.add('completed');
+                    stepCaption.classList.add('completed');
+                    stepStory.classList.add('completed');
+                    stepComplete.classList.add('active', 'completed');
+
+                    // Redirect to results page after a short delay
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('results') }}";
+                    }, 1000);
+                } else if (data.status === 'error') {
+                    processingMessage.textContent = data.message;
+                    processingMessage.style.color = 'var(--danger)';
+                }
+            }
+
+            // Function to poll status endpoint
+            function pollStatus() {
+                fetch("{{ url_for('status') }}")
+                    .then(response => response.json())
+                    .then(data => {
+                        updateStatus(data);
+
+                        // Continue polling if not complete or error
+                        if (data.status !== 'complete' && data.status !== 'error') {
+                            setTimeout(pollStatus, 1000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching status:', error);
+                        setTimeout(pollStatus, 2000); // Retry after 2 seconds on error
+                    });
+            }
+
+            // Start polling
+            pollStatus();
+        });
+    </script>
+</body>
+</html>

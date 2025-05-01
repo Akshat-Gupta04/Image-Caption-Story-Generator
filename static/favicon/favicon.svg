@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32px" height="32px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Image Caption Story Generator</title>
+    <defs>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradient">
+            <stop stop-color="#6c5ce7" offset="0%"></stop>
+            <stop stop-color="#00cec9" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#121212" x="0" y="0" width="32" height="32" rx="6"></rect>
+        <g transform="translate(4, 4)">
+            <!-- Image icon -->
+            <rect fill="url(#gradient)" x="2" y="2" width="10" height="8" rx="1"></rect>
+            <circle fill="#ffffff" cx="5" cy="5" r="1"></circle>
+            
+            <!-- Text/caption lines -->
+            <rect fill="#ffffff" opacity="0.8" x="2" y="14" width="14" height="1.5" rx="0.75"></rect>
+            <rect fill="#ffffff" opacity="0.6" x="2" y="17" width="10" height="1.5" rx="0.75"></rect>
+            
+            <!-- Story book -->
+            <path d="M16,2 C18,2 20,3 22,5 L22,19 C20,17 18,16 16,16 C14,16 12,17 10,19 L10,5 C12,3 14,2 16,2 Z" fill="url(#gradient)" opacity="0.9"></path>
+            <path d="M16,2 C14,2 12,3 10,5 L10,19 C12,17 14,16 16,16 L16,2 Z" fill="url(#gradient)" opacity="0.7"></path>
+            
+            <!-- Sparkle -->
+            <path d="M20,8 L21,10 L23,11 L21,12 L20,14 L19,12 L17,11 L19,10 L20,8 Z" fill="#ffffff"></path>
+        </g>
+    </g>
+</svg>

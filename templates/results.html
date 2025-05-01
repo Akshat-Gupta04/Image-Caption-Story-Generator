@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Results - Image Caption Story Generator</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon/favicon.svg') }}" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="particles-js"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Your Generated Story</h1>
+            <p class="lead">Based on the captions from your uploaded images</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h3><i class="fas fa-image me-2"></i>Image Captions</h3>
+            <div class="image-grid">
+                {% for image_path, caption in image_captions %}
+                    <div class="image-card">
+                        <div class="image-container">
+                            <img src="{{ url_for('static', filename='uploads/' + image_path) }}" alt="Uploaded image">
+                        </div>
+                        <div class="caption-container">
+                            <p class="caption">"{{ caption }}"</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="story-header">
+                <h3><i class="fas fa-book-open me-2"></i>Generated Story</h3>
+                <div class="language-toggle">
+                    <button id="english-btn" class="lang-btn active" onclick="showEnglishStory()">
+                        <i class="fas fa-language me-1"></i>English
+                    </button>
+                    <button id="hindi-btn" class="lang-btn" onclick="translateToHindi()">
+                        <i class="fas fa-language me-1"></i>हिंदी
+                    </button>
+                </div>
+            </div>
+
+            <div class="story-container">
+                <div id="english-story" class="story-text">
+                    {{ story }}
+                </div>
+
+                <div id="hindi-story" class="story-text" style="display: none;">
+                    {% if translated_story %}
+                        {{ translated_story }}
+                    {% else %}
+                        <div class="translation-placeholder">
+                            <div class="translation-loader">
+                                <div class="dot-pulse"></div>
+                            </div>
+                            <p>Click the Hindi button to translate...</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="translation-animation" class="translation-animation">
+                <div class="translation-animation-content">
+                    <div class="translation-animation-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="translation-animation-text" id="translation-status-text">Translating to Hindi...</div>
+                    <div class="translation-animation-characters">
+                        <span class="en-char">A</span>
+                        <i class="fas fa-arrow-right translation-arrow"></i>
+                        <span class="hi-char">अ</span>
+                    </div>
+                    <div class="translation-animation-progress">
+                        <div class="translation-animation-progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Add typewriter effect to story text
+            document.addEventListener('DOMContentLoaded', function() {
+                const storyText = document.getElementById('english-story');
+                if (storyText && !storyText.classList.contains('typewriter-applied')) {
+                    const text = storyText.textContent.trim();
+                    storyText.textContent = '';
+                    storyText.classList.add('typewriter-applied');
+
+                    let i = 0;
+                    const speed = 15; // typing speed in milliseconds
+
+                    function typeWriter() {
+                        if (i < text.length) {
+                            storyText.textContent += text.charAt(i);
+                            i++;
+                            setTimeout(typeWriter, speed);
+                        }
+                    }
+
+                    // Start the typewriter effect with a slight delay
+                    setTimeout(typeWriter, 800);
+                }
+            });
+
+            // Translation functionality
+            function showEnglishStory() {
+                document.getElementById('english-story').style.display = 'block';
+                document.getElementById('hindi-story').style.display = 'none';
+                document.getElementById('english-btn').classList.add('active');
+                document.getElementById('hindi-btn').classList.remove('active');
+            }
+
+            function showHindiStory() {
+                document.getElementById('english-story').style.display = 'none';
+                document.getElementById('hindi-story').style.display = 'block';
+                document.getElementById('english-btn').classList.remove('active');
+                document.getElementById('hindi-btn').classList.add('active');
+            }
+
+            function translateToHindi() {
+                const hindiStory = document.getElementById('hindi-story');
+                const translationAnimation = document.getElementById('translation-animation');
+                const progressBar = document.querySelector('.translation-animation-progress-bar');
+                const statusText = document.getElementById('translation-status-text');
+                const enChar = document.querySelector('.en-char');
+                const hiChar = document.querySelector('.hi-char');
+
+                // If we already have a translation, just show it
+                if (hindiStory.textContent.trim() && !hindiStory.querySelector('.translation-placeholder')) {
+                    showHindiStory();
+                    return;
+                }
+
+                // Show translation animation
+                translationAnimation.classList.add('active');
+
+                // English to Hindi character animation
+                const englishChars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+                const hindiChars = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ'];
+                let charIndex = 0;
+
+                const charAnimation = setInterval(() => {
+                    enChar.textContent = englishChars[charIndex % englishChars.length];
+                    hiChar.textContent = hindiChars[charIndex % hindiChars.length];
+                    charIndex++;
+
+                    // Add pulse animation
+                    enChar.classList.add('pulse');
+                    setTimeout(() => {
+                        enChar.classList.remove('pulse');
+                        hiChar.classList.add('pulse');
+                        setTimeout(() => {
+                            hiChar.classList.remove('pulse');
+                        }, 300);
+                    }, 300);
+
+                }, 1000);
+
+                // Animate progress bar with status updates
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 1;
+                    if (progress > 100) progress = 100;
+                    progressBar.style.width = `${progress}%`;
+
+                    // Update status text based on progress
+                    if (progress < 25) {
+                        statusText.textContent = "Preparing text for translation...";
+                    } else if (progress < 50) {
+                        statusText.textContent = "Translating to Hindi...";
+                    } else if (progress < 75) {
+                        statusText.textContent = "Processing Hindi text...";
+                    } else {
+                        statusText.textContent = "Finalizing translation...";
+                    }
+
+                    if (progress === 100) {
+                        clearInterval(progressInterval);
+                    }
+                }, 100);
+
+                // Make API call to translate
+                fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Clear intervals
+                        clearInterval(charAnimation);
+                        clearInterval(progressInterval);
+
+                        // Ensure progress bar is complete
+                        progressBar.style.width = '100%';
+                        statusText.textContent = "Translation complete!";
+
+                        // Add a slight delay before hiding animation
+                        setTimeout(() => {
+                            // Hide animation
+                            translationAnimation.classList.remove('active');
+
+                            // Update Hindi story content
+                            hindiStory.innerHTML = '';
+
+                            // Apply typewriter effect to Hindi text with improved speed
+                            const text = data.translated_story.trim();
+                            let i = 0;
+                            const speed = 10; // faster typing speed for Hindi
+
+                            function typeWriterHindi() {
+                                if (i < text.length) {
+                                    hindiStory.textContent += text.charAt(i);
+                                    i++;
+                                    setTimeout(typeWriterHindi, speed);
+                                }
+                            }
+
+                            // Show Hindi story
+                            showHindiStory();
+
+                            // Start typewriter effect
+                            setTimeout(typeWriterHindi, 300);
+                        }, 1000);
+                    } else {
+                        // Clear intervals
+                        clearInterval(charAnimation);
+                        clearInterval(progressInterval);
+
+                        // Handle error
+                        statusText.textContent = "Translation failed!";
+                        setTimeout(() => {
+                            translationAnimation.classList.remove('active');
+                            hindiStory.innerHTML = `<p class="translation-error">Translation failed: ${data.message}</p>`;
+                            showHindiStory();
+                        }, 1000);
+                    }
+                })
+                .catch(error => {
+                    // Clear intervals
+                    clearInterval(charAnimation);
+                    clearInterval(progressInterval);
+
+                    console.error('Error:', error);
+                    statusText.textContent = "Translation failed!";
+                    setTimeout(() => {
+                        translationAnimation.classList.remove('active');
+                        hindiStory.innerHTML = '<p class="translation-error">Translation failed. Please try again.</p>';
+                        showHindiStory();
+                    }, 1000);
+                });
+            }
+        </script>
+
+        <div class="text-center mt-4 mb-5">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Generate Another Story
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
